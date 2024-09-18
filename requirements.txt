@@ -1,0 +1,13 @@
+scipy
+kiwisolver
+matplotlib
+imageio
+pypng
+Cython
+PyOpenGL
+triangle
+opencv-python
+Pillow
+vispy
+webdataset
+numpy
