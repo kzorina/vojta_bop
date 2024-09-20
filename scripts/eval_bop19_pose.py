@@ -19,21 +19,21 @@ from bop_toolkit_lib import misc
 p = {
     # Errors to calculate.
     "errors": [
-        # {
-        #     "n_top": -1,
-        #     "type": "ad",
-        #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
-        # },
-        # {
-        #     "n_top": -1,
-        #     "type": "adi",
-        #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
-        # },
-        # {
-        #     "n_top": -1,
-        #     "type": "add",
-        #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
-        # },
+        {
+            "n_top": -1,
+            "type": "ad",
+            "correct_th": [[th] for th in np.arange(1, 101, 1)],
+        },
+        {
+            "n_top": -1,
+            "type": "adi",
+            "correct_th": [[th] for th in np.arange(1, 101, 1)],
+        },
+        {
+            "n_top": -1,
+            "type": "add",
+            "correct_th": [[th] for th in np.arange(1, 101, 1)],
+        },
         {
             # "n_top": -1,
             "n_top": 0,
