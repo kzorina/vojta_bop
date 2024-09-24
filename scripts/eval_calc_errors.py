@@ -397,7 +397,7 @@ for result_filename in p["result_filenames"]:
                                 e = [float("inf")]
                             else:
                                 if p["error_type"] == "ad":
-                                    if obj_id in dp_model["symmetric_obj_ids"]:
+                                    if dp_model["symmetric_obj_ids"] is not None and obj_id in dp_model["symmetric_obj_ids"]:
                                         e = [
                                             pose_error.adi(
                                                 R_e,
