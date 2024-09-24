@@ -141,8 +141,8 @@ with open(os.path.join(p["eval_path"], "all_results_info.txt"), "w") as file:
 # ------------------------------------------------------------------------------
 precision_dict = {}
 recall_dict = {}
-for tvt in [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]:
-    for rvt in [1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]:
+for tvt in [1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3]:
+    for rvt in [1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3]:
         try:
             result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation_kz/gtsam_ycbv-test_cosy_synt_real_0.0_threshold_1_1_1.0_0.1_1_0.1_0.17453292519943295_{tvt:.2E}_{rvt:.2E}.csv'
             # do bop
