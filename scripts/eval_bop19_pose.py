@@ -309,20 +309,22 @@ for tvt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
             # final_scores["bop19_average_precision"] = 0.
 
             # Final score for the given dataset.
-            # final_scores["bop19_average_recall"] = np.mean(
-            #     [average_recalls["ad"], average_recalls["adi"], average_recalls["add"]]
-            # )
-
-            # final_scores["bop19_average_precision"] = np.mean(
-            #     [average_precisions["ad"], average_precisions["adi"], average_precisions["add"]]
-            # )
             final_scores["bop19_average_recall"] = np.mean(
-                [average_recalls["vsd"], average_recalls["mssd"], average_recalls["mspd"]]
+                # [average_recalls["ad"], average_recalls["adi"], average_recalls["add"]]
+                [average_recalls["ad"], average_recalls["adi"]]
             )
 
             final_scores["bop19_average_precision"] = np.mean(
-                [average_precisions["vsd"], average_precisions["mssd"], average_precisions["mspd"]]
+                # [average_precisions["ad"], average_precisions["adi"], average_precisions["add"]]
+                [average_precisions["ad"], average_precisions["adi"]]
             )
+            # final_scores["bop19_average_recall"] = np.mean(
+            #     [average_recalls["vsd"], average_recalls["mssd"], average_recalls["mspd"]]
+            # )
+            #
+            # final_scores["bop19_average_precision"] = np.mean(
+            #     [average_precisions["vsd"], average_precisions["mssd"], average_precisions["mspd"]]
+            # )
 
             # Average estimation time per image.
             final_scores["bop19_average_time_per_image"] = average_time_per_image
