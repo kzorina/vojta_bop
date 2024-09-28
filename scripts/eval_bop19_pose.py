@@ -141,11 +141,12 @@ with open(os.path.join(p["eval_path"], "all_results_info.txt"), "w") as file:
 # ------------------------------------------------------------------------------
 # precision_dict = {}
 # recall_dict = {}
-for tvt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
-    for rvt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
+for ortt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
+    for ortr in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
         try:
             # tsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_2.00E+00_2.00E+00.csv
-            result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_{tvt:.2E}_{rvt:.2E}.csv'
+            # result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_{tvt:.2E}_{rvt:.2E}.csv'
+            result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters2_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_{ortt}_{ortr}_1.00E+00_1.00E+00.csv'
     # for result_filename in p["result_filenames"]:
 
             # do bop
