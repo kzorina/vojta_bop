@@ -139,226 +139,226 @@ with open(os.path.join(p["eval_path"], "all_results_info.txt"), "w") as file:
 
 # Evaluation.
 # ------------------------------------------------------------------------------
-# precision_dict = {}
-# recall_dict = {}
-for ortt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
-    for ortr in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
-        try:
-            # tsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_2.00E+00_2.00E+00.csv
-            # result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_{tvt:.2E}_{rvt:.2E}.csv'
-            result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters2_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_{ortt}_{ortr}_1.00E+00_1.00E+00.csv'
-    # for result_filename in p["result_filenames"]:
+# # precision_dict = {}
+# # recall_dict = {}
+# for ortt in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
+#     for ortr in [1e-4, 1e-3, 1e-2, 1e-1, 1., 2., 3., 5., 10.]:
+#         try:
+#             # tsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_2.00E+00_2.00E+00.csv
+#             # result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_0.1_0.17453292519943295_{tvt:.2E}_{rvt:.2E}.csv'
+#             result_filename = f'/home/ros/kzorina/vojtas/ycbv/ablation/gtsamsearch-parameters2_ycbv-test_cosy_synt_real_0.0_threshold_noreject_1_0_1.0_1e-08_1e-07_{ortt}_{ortr}_1.00E+00_1.00E+00.csv'
+for result_filename in p["result_filenames"]:
 
-            # do bop
-            misc.log("===========")
-            misc.log("EVALUATING: {}".format(result_filename))
-            misc.log("===========")
+    # do bop
+    misc.log("===========")
+    misc.log("EVALUATING: {}".format(result_filename))
+    misc.log("===========")
 
-            time_start = time.time()
+    time_start = time.time()
 
-            # Volume under recall surface (VSD) / area under recall curve (MSSD, MSPD).
-            average_recalls = {}
-            average_precisions = {}
+    # Volume under recall surface (VSD) / area under recall curve (MSSD, MSPD).
+    average_recalls = {}
+    average_precisions = {}
 
-            # Name of the result and the dataset. (blabla_dataset-blabla)
-            result_name = os.path.splitext(os.path.basename(result_filename))[0]
-            dataset = str(result_name.split("_")[1].split("-")[0])
+    # Name of the result and the dataset. (blabla_dataset-blabla)
+    result_name = os.path.splitext(os.path.basename(result_filename))[0]
+    dataset = str(result_name.split("_")[1].split("-")[0])
 
-            # Calculate the average estimation time per image.
-            ests = inout.load_bop_results(
-                os.path.join(p["results_path"], result_filename), version="bop19"
+    # Calculate the average estimation time per image.
+    ests = inout.load_bop_results(
+        os.path.join(p["results_path"], result_filename), version="bop19"
+    )
+    times = {}
+    times_available = True
+    for est in ests:
+        # if est["scene_id"] != 48: continue  # TODO: remove!!
+        result_key = "{:06d}_{:06d}".format(est["scene_id"], est["im_id"])
+        if est["time"] < 0:
+            # All estimation times must be provided.
+            times_available = False
+            break
+        elif result_key in times:
+            if abs(times[result_key] - est["time"]) > 0.001:
+                raise ValueError(
+                    "The running time for scene {} and image {} is not the same for "
+                    "all estimates.".format(est["scene_id"], est["im_id"])
+                )
+        else:
+            times[result_key] = est["time"]
+
+    if times_available:
+        average_time_per_image = np.mean(list(times.values()))
+    else:
+        average_time_per_image = -1.0
+
+    # Evaluate the pose estimates.
+    for error in p["errors"]:
+        # Calculate error of the pose estimates.
+        calc_errors_cmd = [
+            "python",
+            os.path.join(
+                os.path.dirname(os.path.realpath(__file__)), "eval_calc_errors.py"
+            ),
+            "--n_top={}".format(error["n_top"]),
+            "--error_type={}".format(error["type"]),
+            "--result_filenames={}".format(result_filename),
+            "--renderer_type={}".format(p["renderer_type"]),
+            "--results_path={}".format(p["results_path"]),
+            "--eval_path={}".format(p["eval_path"]),
+            "--targets_filename={}".format(p["targets_filename"]),
+            "--max_sym_disc_step={}".format(p["max_sym_disc_step"]),
+            "--skip_missing=1",
+        ]
+        if error["type"] == "vsd":
+            vsd_deltas_str = ",".join(
+                ["{}:{}".format(k, v) for k, v in error["vsd_deltas"].items()]
             )
-            times = {}
-            times_available = True
-            for est in ests:
-                # if est["scene_id"] != 48: continue  # TODO: remove!!
-                result_key = "{:06d}_{:06d}".format(est["scene_id"], est["im_id"])
-                if est["time"] < 0:
-                    # All estimation times must be provided.
-                    times_available = False
-                    break
-                elif result_key in times:
-                    if abs(times[result_key] - est["time"]) > 0.001:
-                        raise ValueError(
-                            "The running time for scene {} and image {} is not the same for "
-                            "all estimates.".format(est["scene_id"], est["im_id"])
-                        )
-                else:
-                    times[result_key] = est["time"]
+            calc_errors_cmd += [
+                "--vsd_deltas={}".format(vsd_deltas_str),
+                "--vsd_taus={}".format(",".join(map(str, error["vsd_taus"]))),
+                "--vsd_normalized_by_diameter={}".format(
+                    error["vsd_normalized_by_diameter"]
+                ),
+            ]
 
-            if times_available:
-                average_time_per_image = np.mean(list(times.values()))
-            else:
-                average_time_per_image = -1.0
+        misc.log("Running: " + " ".join(calc_errors_cmd))
+        if subprocess.call(calc_errors_cmd) != 0:
+            raise RuntimeError("Calculation of pose errors failed.")
 
-            # Evaluate the pose estimates.
-            for error in p["errors"]:
-                # Calculate error of the pose estimates.
-                calc_errors_cmd = [
+        # Paths (rel. to p['eval_path']) to folders with calculated pose errors.
+        # For VSD, there is one path for each setting of tau. For the other pose
+        # error functions, there is only one path.
+        error_dir_paths = {}
+        if error["type"] == "vsd":
+            for vsd_tau in error["vsd_taus"]:
+                error_sign = misc.get_error_signature(
+                    error["type"],
+                    error["n_top"],
+                    vsd_delta=error["vsd_deltas"][dataset],
+                    vsd_tau=vsd_tau,
+                )
+                error_dir_paths[error_sign] = os.path.join(result_name, error_sign)
+        else:
+            error_sign = misc.get_error_signature(error["type"], error["n_top"])
+            error_dir_paths[error_sign] = os.path.join(result_name, error_sign)
+
+        # Recall scores for all settings of the threshold of correctness (and also
+        # of the misalignment tolerance tau in the case of VSD).
+        recalls = []
+        precisions = []
+
+        # Calculate performance scores.
+        for error_sign, error_dir_path in error_dir_paths.items():
+            for correct_th in error["correct_th"]:
+                calc_scores_cmd = [
                     "python",
                     os.path.join(
-                        os.path.dirname(os.path.realpath(__file__)), "eval_calc_errors.py"
+                        os.path.dirname(os.path.realpath(__file__)),
+                        "eval_calc_scores.py",
                     ),
-                    "--n_top={}".format(error["n_top"]),
-                    "--error_type={}".format(error["type"]),
-                    "--result_filenames={}".format(result_filename),
-                    "--renderer_type={}".format(p["renderer_type"]),
-                    "--results_path={}".format(p["results_path"]),
+                    "--error_dir_paths={}".format(error_dir_path),
                     "--eval_path={}".format(p["eval_path"]),
                     "--targets_filename={}".format(p["targets_filename"]),
-                    "--max_sym_disc_step={}".format(p["max_sym_disc_step"]),
-                    "--skip_missing=1",
+                    "--visib_gt_min={}".format(p["visib_gt_min"]),
                 ]
-                if error["type"] == "vsd":
-                    vsd_deltas_str = ",".join(
-                        ["{}:{}".format(k, v) for k, v in error["vsd_deltas"].items()]
+
+                calc_scores_cmd += [
+                    "--correct_th_{}={}".format(
+                        error["type"], ",".join(map(str, correct_th))
                     )
-                    calc_errors_cmd += [
-                        "--vsd_deltas={}".format(vsd_deltas_str),
-                        "--vsd_taus={}".format(",".join(map(str, error["vsd_taus"]))),
-                        "--vsd_normalized_by_diameter={}".format(
-                            error["vsd_normalized_by_diameter"]
-                        ),
-                    ]
-
-                misc.log("Running: " + " ".join(calc_errors_cmd))
-                if subprocess.call(calc_errors_cmd) != 0:
-                    raise RuntimeError("Calculation of pose errors failed.")
-
-                # Paths (rel. to p['eval_path']) to folders with calculated pose errors.
-                # For VSD, there is one path for each setting of tau. For the other pose
-                # error functions, there is only one path.
-                error_dir_paths = {}
-                if error["type"] == "vsd":
-                    for vsd_tau in error["vsd_taus"]:
-                        error_sign = misc.get_error_signature(
-                            error["type"],
-                            error["n_top"],
-                            vsd_delta=error["vsd_deltas"][dataset],
-                            vsd_tau=vsd_tau,
-                        )
-                        error_dir_paths[error_sign] = os.path.join(result_name, error_sign)
-                else:
-                    error_sign = misc.get_error_signature(error["type"], error["n_top"])
-                    error_dir_paths[error_sign] = os.path.join(result_name, error_sign)
-
-                # Recall scores for all settings of the threshold of correctness (and also
-                # of the misalignment tolerance tau in the case of VSD).
-                recalls = []
-                precisions = []
-
-                # Calculate performance scores.
-                for error_sign, error_dir_path in error_dir_paths.items():
-                    for correct_th in error["correct_th"]:
-                        calc_scores_cmd = [
-                            "python",
-                            os.path.join(
-                                os.path.dirname(os.path.realpath(__file__)),
-                                "eval_calc_scores.py",
-                            ),
-                            "--error_dir_paths={}".format(error_dir_path),
-                            "--eval_path={}".format(p["eval_path"]),
-                            "--targets_filename={}".format(p["targets_filename"]),
-                            "--visib_gt_min={}".format(p["visib_gt_min"]),
-                        ]
-
-                        calc_scores_cmd += [
-                            "--correct_th_{}={}".format(
-                                error["type"], ",".join(map(str, correct_th))
-                            )
-                        ]
-
-                        misc.log("Running: " + " ".join(calc_scores_cmd))
-                        if subprocess.call(calc_scores_cmd) != 0:
-                            raise RuntimeError("Calculation of scores failed.")
-
-                        # Path to file with calculated scores.
-                        score_sign = misc.get_score_signature(correct_th, p["visib_gt_min"])
-
-                        scores_filename = "scores_{}.json".format(score_sign)
-                        scores_path = os.path.join(
-                            p["eval_path"], result_name, error_sign, scores_filename
-                        )
-
-                        # Load the scores.
-                        misc.log("Loading calculated scores from: {}".format(scores_path))
-                        scores = inout.load_json(scores_path)
-                        recalls.append(scores["recall"])
-                        precisions.append(scores["precision"])
-
-                average_recalls[error["type"]] = np.mean(recalls)
-                average_precisions[error["type"]] = np.mean(precisions)
-
-                misc.log("Recall scores: {}".format(" ".join(map(str, recalls))))
-                misc.log("Average recall: {}".format(average_recalls[error["type"]]))
-                misc.log("precision scores: {}".format(" ".join(map(str, precisions))))
-                misc.log("Average precision: {}".format(average_precisions[error["type"]]))
-
-            time_total = time.time() - time_start
-            misc.log("Evaluation of {} took {}s.".format(result_filename, time_total))
-
-            # Calculate the final scores.
-            final_scores = {}
-            for error in p["errors"]:
-                final_scores["bop19_average_recall_{}".format(error["type"])] = average_recalls[
-                    error["type"]
                 ]
-                final_scores["bop19_average_precision_{}".format(error["type"])] = average_precisions[
-                    error["type"]
-                ]
-            # final_scores["bop19_average_recall"] = 0.
-            # final_scores["bop19_average_precision"] = 0.
 
-            # Final score for the given dataset.
-            final_scores["bop19_average_recall"] = np.mean(
-                # [average_recalls["ad"], average_recalls["adi"], average_recalls["add"]]
-                [average_recalls["ad"], average_recalls["adi"]]
-            )
+                misc.log("Running: " + " ".join(calc_scores_cmd))
+                if subprocess.call(calc_scores_cmd) != 0:
+                    raise RuntimeError("Calculation of scores failed.")
 
-            final_scores["bop19_average_precision"] = np.mean(
-                # [average_precisions["ad"], average_precisions["adi"], average_precisions["add"]]
-                [average_precisions["ad"], average_precisions["adi"]]
-            )
-            # final_scores["bop19_average_recall"] = np.mean(
-            #     [average_recalls["vsd"], average_recalls["mssd"], average_recalls["mspd"]]
-            # )
-            #
-            # final_scores["bop19_average_precision"] = np.mean(
-            #     [average_precisions["vsd"], average_precisions["mssd"], average_precisions["mspd"]]
-            # )
+                # Path to file with calculated scores.
+                score_sign = misc.get_score_signature(correct_th, p["visib_gt_min"])
 
-            # Average estimation time per image.
-            final_scores["bop19_average_time_per_image"] = average_time_per_image
+                scores_filename = "scores_{}.json".format(score_sign)
+                scores_path = os.path.join(
+                    p["eval_path"], result_name, error_sign, scores_filename
+                )
 
-            # Save the final scores.
-            final_scores_path = os.path.join(p["eval_path"], result_name, "scores_bop19.json")
-            inout.save_json(final_scores_path, final_scores)
-            with open(os.path.join(p["eval_path"], "all_results.txt"), "a") as file:
-                lst = result_filename.split("_")
-                # ort = lst[-4]
-                # tvt = lst[-3]
-                # Rvt = lst[-2]
-                # file.write(f"{result_filename}:\n")
-                # file.write("outlier_treshold,translation_validity_treshold,Rotation_validity_treshold," + str(list(final_scores.keys()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
-                # file.write(f"{ort},{tvt},{Rvt}," + str(list(final_scores.values()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
-                file.write(time.ctime() + str(list(final_scores.values()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
-            with open(os.path.join(p["eval_path"], "all_results_info.txt"), "a") as file:
-                lst = result_filename.split("_")
-                # ort = lst[-4]
-                # tvt = lst[-3]
-                # Rvt = lst[-2]
-                file.write(f"{result_filename}:\n")
-                file.write("outlier_treshold,translation_validity_treshold,Rotation_validity_treshold," + str(list(final_scores.keys()))[1:-1].translate({ord('\''): None, ord(' '): None}) + f"{result_filename}" +"\n")
-            # Print the final scores.
-            misc.log("FINAL SCORES:")
-            for score_name, score_value in final_scores.items():
-                misc.log("- {}: {}".format(score_name, score_value))
-            # precision_dict[(tvt, rvt)] = final_scores["bop19_average_precision"]
-            # recall_dict[(tvt, rvt)] = final_scores["bop19_average_recall"]
-            # pickle.dump(precision_dict, open('/home/ros/kzorina/vojtas/ycbv/ablation_kz_precision.p', 'wb'))
-            # pickle.dump(recall_dict, open('/home/ros/kzorina/vojtas/ycbv/ablation_kz_recall.p', 'wb'))
-        except Exception as e:
-            print(f"Skipping file {result_filename} because of exception:")
-            print(e)
+                # Load the scores.
+                misc.log("Loading calculated scores from: {}".format(scores_path))
+                scores = inout.load_json(scores_path)
+                recalls.append(scores["recall"])
+                precisions.append(scores["precision"])
+
+        average_recalls[error["type"]] = np.mean(recalls)
+        average_precisions[error["type"]] = np.mean(precisions)
+
+        misc.log("Recall scores: {}".format(" ".join(map(str, recalls))))
+        misc.log("Average recall: {}".format(average_recalls[error["type"]]))
+        misc.log("precision scores: {}".format(" ".join(map(str, precisions))))
+        misc.log("Average precision: {}".format(average_precisions[error["type"]]))
+
+    time_total = time.time() - time_start
+    misc.log("Evaluation of {} took {}s.".format(result_filename, time_total))
+
+    # Calculate the final scores.
+    final_scores = {}
+    for error in p["errors"]:
+        final_scores["bop19_average_recall_{}".format(error["type"])] = average_recalls[
+            error["type"]
+        ]
+        final_scores["bop19_average_precision_{}".format(error["type"])] = average_precisions[
+            error["type"]
+        ]
+    # final_scores["bop19_average_recall"] = 0.
+    # final_scores["bop19_average_precision"] = 0.
+
+    # Final score for the given dataset.
+    final_scores["bop19_average_recall"] = np.mean(
+        # [average_recalls["ad"], average_recalls["adi"], average_recalls["add"]]
+        [average_recalls["ad"], average_recalls["adi"]]
+    )
+
+    final_scores["bop19_average_precision"] = np.mean(
+        # [average_precisions["ad"], average_precisions["adi"], average_precisions["add"]]
+        [average_precisions["ad"], average_precisions["adi"]]
+    )
+    # final_scores["bop19_average_recall"] = np.mean(
+    #     [average_recalls["vsd"], average_recalls["mssd"], average_recalls["mspd"]]
+    # )
+    #
+    # final_scores["bop19_average_precision"] = np.mean(
+    #     [average_precisions["vsd"], average_precisions["mssd"], average_precisions["mspd"]]
+    # )
+
+    # Average estimation time per image.
+    final_scores["bop19_average_time_per_image"] = average_time_per_image
+
+    # Save the final scores.
+    final_scores_path = os.path.join(p["eval_path"], result_name, "scores_bop19.json")
+    inout.save_json(final_scores_path, final_scores)
+    with open(os.path.join(p["eval_path"], "all_results.txt"), "a") as file:
+        lst = result_filename.split("_")
+        # ort = lst[-4]
+        # tvt = lst[-3]
+        # Rvt = lst[-2]
+        # file.write(f"{result_filename}:\n")
+        # file.write("outlier_treshold,translation_validity_treshold,Rotation_validity_treshold," + str(list(final_scores.keys()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
+        # file.write(f"{ort},{tvt},{Rvt}," + str(list(final_scores.values()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
+        file.write(time.ctime() + str(list(final_scores.values()))[1:-1].translate({ord('\''): None, ord(' '): None}) + "\n")
+    with open(os.path.join(p["eval_path"], "all_results_info.txt"), "a") as file:
+        lst = result_filename.split("_")
+        # ort = lst[-4]
+        # tvt = lst[-3]
+        # Rvt = lst[-2]
+        file.write(f"{result_filename}:\n")
+        file.write("outlier_treshold,translation_validity_treshold,Rotation_validity_treshold," + str(list(final_scores.keys()))[1:-1].translate({ord('\''): None, ord(' '): None}) + f"{result_filename}" +"\n")
+    # Print the final scores.
+    misc.log("FINAL SCORES:")
+    for score_name, score_value in final_scores.items():
+        misc.log("- {}: {}".format(score_name, score_value))
+    # precision_dict[(tvt, rvt)] = final_scores["bop19_average_precision"]
+    # recall_dict[(tvt, rvt)] = final_scores["bop19_average_recall"]
+    # pickle.dump(precision_dict, open('/home/ros/kzorina/vojtas/ycbv/ablation_kz_precision.p', 'wb'))
+    # pickle.dump(recall_dict, open('/home/ros/kzorina/vojtas/ycbv/ablation_kz_recall.p', 'wb'))
+# except Exception as e:
+#     print(f"Skipping file {result_filename} because of exception:")
+#     print(e)
 
 misc.log("Done.")
