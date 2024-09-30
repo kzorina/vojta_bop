@@ -35,12 +35,12 @@ p = {
         #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
         # },
         {
-        #     "n_top": -1,
+            "n_top": -1,
             "type": "te",
         #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
         },
         {
-        #     "n_top": -1,
+            "n_top": -1,
             "type": "re",
         #     "correct_th": [[th] for th in np.arange(1, 101, 1)],
         },
